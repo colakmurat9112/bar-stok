@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bar Stok</title>
+<meta name="theme-color" content="#0f1115">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Haftalık bar stok sayımı ve sipariş listesi">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Bar Stok">
+<style>
+:root{
+  --bg:#0f1115; --card:#181b22; --card2:#20242d; --line:#2a2f3b;
+  --text:#eef0f5; --muted:#8a92a6;
+  --amber:#f5a524; --ink:#1b1200;
+  --danger:#ff6464; --ok:#4cc38a; --warn:#f2c94c;
+  --nav-h:64px; --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);color-scheme:dark}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;min-height:100dvh;overscroll-behavior-y:none;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);
+}
+button,input,textarea{font:inherit;color:inherit}
+button{touch-action:manipulation;cursor:pointer;border:0;background:none;padding:0}
+svg{display:block}
+.hidden{display:none!important}
+.wrap{padding:0 16px;max-width:640px;margin:0 auto}
+
+/* Header */
+.top{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 0 8px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px;letter-spacing:.2px;flex:1}
+.brand svg{width:30px;height:30px}
+.btn-install{
+  min-height:44px;padding:0 14px;border-radius:12px;display:inline-flex;align-items:center;gap:8px;
+  background:rgba(245,165,36,.14);border:1px solid rgba(245,165,36,.45);color:var(--amber);font-weight:700;font-size:15px
+}
+.btn-install svg{width:20px;height:20px}
+
+/* Buttons */
+.btn{
+  min-height:52px;padding:0 18px;border-radius:14px;background:var(--card2);border:1px solid var(--line);
+  font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center
+}
+.btn:active{transform:scale(.98);filter:brightness(1.2)}
+.btn.primary{background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.btn.danger{color:var(--danger)}
+.btn.block{width:100%}
+.btn.sm{min-height:44px;padding:0 14px;font-size:15px}
+.btn.big{min-height:60px;font-size:18px}
+.btn.off{opacity:.45}
+
+/* Inputs */
+.inp{
+  width:100%;min-height:52px;padding:0 14px;border-radius:14px;background:#12151b;border:1px solid var(--line);
+  font-size:18px;outline:none;-webkit-appearance:none;appearance:none
+}
+.inp:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,165,36,.2)}
+.inp::placeholder{color:#5d6578}
+textarea.inp{padding:12px 14px;min-height:180px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;resize:vertical;line-height:1.4}
+.field{margin-top:12px}
+.field label{display:block;font-size:13.5px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.err{color:var(--danger);font-size:14px;margin-top:8px}
+.chk{display:flex;align-items:center;gap:12px;min-height:48px;font-weight:600;color:var(--text)}
+.chk input{width:24px;height:24px;accent-color:var(--amber);flex:none}
+
+/* Layout */
+.tab{display:none}
+.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.row{display:flex;gap:10px;align-items:center}
+.sec-title{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px;color:var(--muted);font-weight:700;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:28px 12px}
+
+/* Sticky tools (count tab) */
+.tools{position:sticky;top:0;z-index:20;margin:0 -16px;padding:8px 16px 10px;background:linear-gradient(var(--bg) 88%,rgba(15,17,21,0))}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
+.seg button{min-height:56px;border-radius:12px;font-weight:700;font-size:13px;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15}
+.seg button .e{font-size:19px}
+.seg button.on{background:var(--amber);color:var(--ink)}
+.progress{margin-left:auto;font-weight:700;color:var(--muted);font-size:15px}
+
+/* Product item */
+.item{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 14px}
+.item .main{flex:1;min-width:0}
+.name{font-weight:800;font-size:19px;line-height:1.2;word-break:break-word}
+.note{color:var(--muted);font-size:13.5px;margin-top:2px;word-break:break-word;opacity:.85}
+.par{text-align:right;line-height:1.1;padding-right:2px}
+.par small{display:block;color:var(--muted);font-size:11.5px}
+.par b{font-size:22px;color:var(--amber)}
+.ico{width:46px;height:46px;border-radius:12px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none}
+.ico.del{color:var(--danger)}
+.ico svg{width:22px;height:22px}
+.ico:active{filter:brightness(1.3)}
+
+/* Count card */
+.ctop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.cname{min-width:0}
+.js-chip{flex:none}
+.chip{white-space:nowrap;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--card2);color:var(--muted);border:1px solid var(--line);display:inline-block}
+.chip.need{background:rgba(245,165,36,.15);color:var(--amber);border-color:rgba(245,165,36,.4)}
+.chip.ok{background:rgba(76,195,138,.14);color:var(--ok);border-color:rgba(76,195,138,.4)}
+.ccard.counted{border-color:#343b4d}
+.stepper{display:grid;grid-template-columns:60px minmax(0,1fr) 60px;gap:8px;margin-top:12px}
+.stepper.sm{grid-template-columns:52px minmax(0,1fr) 52px;margin-top:0}
+.stp{height:60px;border-radius:14px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.stepper.sm .stp,.stepper.sm .num{height:52px}
+.stp.plus{background:rgba(245,165,36,.14);border-color:rgba(245,165,36,.45);color:var(--amber)}
+.stp svg{width:26px;height:26px}
+.stp:active{filter:brightness(1.35);transform:scale(.96)}
+.num{
+  height:60px;width:100%;min-width:0;text-align:center;font-size:30px;font-weight:800;border-radius:14px;
+  background:#12151b;border:1px solid var(--line);outline:none;-moz-appearance:textfield;appearance:textfield;padding:0
+}
+.num:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,165,36,.2)}
+.num::-webkit-inner-spin-button,.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num::placeholder{color:#4b5266}
+.brow{display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;align-items:center;margin-top:10px}
+.blabel{font-weight:700;color:var(--muted);font-size:14px}
+.cinfo{margin-top:10px;color:var(--muted);font-size:14.5px}
+.cinfo b{color:var(--text)}
+
+/* Order */
+.osum{margin-top:14px;font-size:18px;font-weight:800}
+.osum small{display:block;color:var(--muted);font-size:14px;font-weight:600;margin-top:2px}
+.orow{display:flex;gap:12px;align-items:flex-start}
+.qty{min-width:62px;font-weight:900;font-size:27px;color:var(--amber);white-space:nowrap;line-height:1.1}
+.orow .main{flex:1;min-width:0}
+.odetail{color:var(--muted);font-size:13.5px;margin-top:4px}
+.warn{background:rgba(242,201,76,.1);border:1px solid rgba(242,201,76,.45);color:var(--warn);border-radius:14px;padding:12px 14px;margin-top:12px}
+.warn .wt{font-weight:800}
+.warn .wl{font-size:14px;margin:4px 0 10px;opacity:.9;word-break:break-word}
+.stickybar{
+  position:sticky;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);z-index:15;margin-top:14px;padding:10px 0 4px;
+  background:linear-gradient(rgba(15,17,21,0),var(--bg) 40%)
+}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.dgrid .full{grid-column:1/-1}
+.card h3{margin:0;font-size:16px}
+.hint{color:var(--muted);font-size:13.5px;margin:4px 0 0}
+
+/* Bottom nav */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(3,1fr);
+  background:rgba(15,17,21,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)
+}
+.nav button{height:var(--nav-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:12.5px;font-weight:700;position:relative}
+.nav button.on{color:var(--amber)}
+.nav svg{width:26px;height:26px}
+.badge{position:absolute;top:6px;left:calc(50% + 8px);min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--amber);color:var(--ink);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* Modals */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.62);display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sheet{
+  width:100%;max-width:640px;max-height:92vh;max-height:92dvh;overflow:auto;background:var(--card);
+  border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:up .18s ease-out;margin:0
+}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.sheet h2{margin:0 0 6px;font-size:20px}
+.sheet .sub{color:var(--muted);font-size:14px;margin:0 0 4px}
+.btnrow{display:flex;gap:10px;margin-top:16px}
+.btnrow .btn{flex:1}
+.radios{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.radios label{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 12px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-weight:700;font-size:15px}
+.radios input{width:22px;height:22px;accent-color:var(--amber);flex:none}
+.preview{margin-top:12px;font-size:14.5px;border-radius:12px;padding:10px 12px;background:var(--card2);border:1px solid var(--line);min-height:44px}
+.preview.bad{color:var(--danger);border-color:rgba(255,100,100,.45)}
+.preview.good{color:var(--text)}
+.steps{margin:12px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.steps li{display:flex;gap:12px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px}
+.steps .n{width:30px;height:30px;border-radius:50%;background:var(--amber);color:var(--ink);font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.steps svg{width:24px;height:24px;color:var(--amber);flex:none}
+.callout{margin-top:12px;font-size:14px;color:var(--warn);background:rgba(242,201,76,.1);border:1px solid rgba(242,201,76,.45);border-radius:12px;padding:10px 12px}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
+  bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);z-index:200;
+  background:#2a2f3b;border:1px solid #3a4152;padding:12px 16px;border-radius:14px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);display:flex;gap:14px;align-items:center;font-weight:600;font-size:15px
+}
+.toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast button{color:var(--amber);font-weight:800;min-height:36px}
+</style>
+</head>
+<body>
+
+<noscript><p style="padding:24px">Bu uygulama için JavaScript gerekli.</p></noscript>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3.5 4.5h17L12 14z" fill="#f5a524"/>
+        <path d="M12 14v6M8 20h8" stroke="#f5a524" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Bar Stok
+    </div>
+    <button class="btn-install hidden" id="btn-install" data-action="install" aria-label="Ana ekrana ekle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+      Yükle
+    </button>
+  </header>
+
+  <!-- ============ TAB 1: ÜRÜNLER ============ -->
+  <section class="tab" id="tab-products">
+    <input class="inp" type="search" id="p-search" placeholder="🔍 Ara: ürün adı veya not…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+
+    <form class="card" id="f-add" autocomplete="off" style="margin-top:12px">
+      <div class="field" style="margin-top:0">
+        <label for="a-name">Ürün Adı</label>
+        <input class="inp" id="a-name" maxlength="80" placeholder="Örn: Sarti" enterkeyhint="next" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label for="a-par">Garanti Stok</label>
+          <input class="inp" id="a-par" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" placeholder="6" enterkeyhint="next">
+        </div>
+        <div class="field">
+          <label for="a-note">Not (Opsiyonel)</label>
+          <input class="inp" id="a-note" maxlength="120" placeholder="Örn: 70cl / Kasa" enterkeyhint="done" autocomplete="off">
+        </div>
+      </div>
+      <div class="err" id="a-err"></div>
+      <button class="btn primary block big" type="submit" style="margin-top:12px">＋ Ekle</button>
+    </form>
+
+    <button class="btn block" data-action="open-import" style="margin-top:10px">📋 JSON Yapıştır / Toplu Ekle</button>
+
+    <div class="sec-title"><span>Ürünler</span><span id="p-count"></span></div>
+    <div class="list" id="plist" style="margin-top:8px"></div>
+  </section>
+
+  <!-- ============ TAB 2: SAYIM ============ -->
+  <section class="tab" id="tab-count">
+    <div class="tools">
+      <div class="seg" id="seg">
+        <button data-action="loc" data-loc="bar"><span class="e">🍸</span><span>Bar Tezgahı</span></button>
+        <button data-action="loc" data-loc="depo"><span class="e">📦</span><span>Depo</span></button>
+        <button data-action="loc" data-loc="both"><span class="e">Σ</span><span>İkisi Birden</span></button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn sm danger" data-action="reset">↺ Sayımı Sıfırla</button>
+        <div class="progress" id="c-progress"></div>
+      </div>
+    </div>
+    <input class="inp" type="search" id="c-search" placeholder="🔍 Ara: ürün adı veya not…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <label class="chk"><input type="checkbox" id="c-only"><span>Sadece sayılmayanlar</span></label>
+    <div class="list" id="clist" style="margin-top:4px"></div>
+  </section>
+
+  <!-- ============ TAB 3: SİPARİŞ ============ -->
+  <section class="tab" id="tab-order">
+    <div class="osum" id="o-sum"></div>
+    <div class="list" id="olist"></div>
+    <div id="o-warn"></div>
+
+    <div class="stickybar">
+      <button class="btn primary block big" id="btn-copy-order" data-action="copy-order">📋 Listeyi Kopyala</button>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>Yedek &amp; Veri</h3>
+      <p class="hint">Yedekte ürünler ve mevcut sayımlar (bar/depo ayrı) bulunur.</p>
+      <div class="dgrid">
+        <button class="btn" data-action="export-file">⬇ JSON İndir</button>
+        <button class="btn" data-action="export-copy">⧉ JSON Kopyala</button>
+        <button class="btn" data-action="import-file">⬆ JSON Yükle</button>
+        <button class="btn" data-action="open-import">📋 JSON Yapıştır</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="nav" aria-label="Ana gezinme">
+  <button data-action="tab" data-tab="products" aria-label="Ürünler">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    Ürünler
+  </button>
+  <button data-action="tab" data-tab="count" aria-label="Sayım">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 13l2 2 4-4"/></svg>
+    Sayım
+  </button>
+  <button data-action="tab" data-tab="order" aria-label="Sipariş">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2.5l2.2 11h10.3l2-8H7"/></svg>
+    Sipariş
+    <span class="badge hidden" id="o-badge">0</span>
+  </button>
+</nav>
+
+<!-- ============ MODAL: ÜRÜN DÜZENLE ============ -->
+<div class="ov" id="m-edit">
+  <form class="sheet" id="f-edit" autocomplete="off">
+    <h2>Ürünü Düzenle</h2>
+    <input type="hidden" id="e-id">
+    <div class="field">
+      <label for="e-name">Ürün Adı</label>
+      <input class="inp" id="e-name" maxlength="80" spellcheck="false">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="e-par">Garanti Stok</label>
+        <input class="inp" id="e-par" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1">
+      </div>
+      <div class="field">
+        <label for="e-note">Not (Opsiyonel)</label>
+        <input class="inp" id="e-note" maxlength="120">
+      </div>
+    </div>
+    <div class="err" id="e-err"></div>
+    <div class="btnrow">
+      <button type="button" class="btn" data-action="close">İptal</button>
+      <button type="submit" class="btn primary">Kaydet</button>
+    </div>
+  </form>
+</div>
+
+<!-- ============ MODAL: JSON YAPIŞTIR / İÇE AKTAR ============ -->
+<div class="ov" id="m-import">
+  <div class="sheet">
+    <h2>JSON Yapıştır / Toplu Ekle</h2>
+    <p class="sub">Tam yedek (<code>barstok.v1</code>) ya da basit liste kabul edilir:<br><code>[{"name":"Sarti","par":6,"note":""}]</code></p>
+    <div class="field" style="margin-top:10px">
+      <textarea class="inp" id="i-text" placeholder='[{"name":"Sarti","par":6,"note":"70cl / Kasa"}]' spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" style="flex:1" data-action="paste-clip">📥 Panodan Yapıştır</button>
+      <button class="btn sm" style="flex:1" data-action="import-file">📁 Dosya Seç</button>
+    </div>
+    <div class="radios">
+      <label><input type="radio" name="i-mode" value="merge" checked> Birleştir</label>
+      <label><input type="radio" name="i-mode" value="replace"> Üzerine Yaz</label>
+    </div>
+    <label class="chk" style="margin-top:6px"><input type="checkbox" id="i-counts" checked><span>Sayımları da dahil et</span></label>
+    <div class="preview" id="i-preview">Metni yapıştır, burada özet görünecek.</div>
+    <div class="btnrow">
+      <button class="btn" data-action="close">İptal</button>
+      <button class="btn primary off" id="i-go" data-action="import-go">İçe Aktar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: ANA EKRANA EKLE ============ -->
+<div class="ov" id="m-install">
+  <div class="sheet">
+    <h2>Ana Ekrana Ekle</h2>
+    <div id="ins-ios">
+      <ol class="steps">
+        <li><span class="n">1</span><span style="flex:1">Safari'de alttaki <b>Paylaş</b> butonuna bas</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></li>
+        <li><span class="n">2</span><span style="flex:1">Aşağı kaydır, <b>"Ana Ekrana Ekle"</b>yi seç</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg></li>
+        <li><span class="n">3</span><span style="flex:1">Sağ üstten <b>Ekle</b>'ye bas</span></li>
+      </ol>
+      <div class="callout" id="ins-ios-note">Safari'de girdiğin veriler ana ekran uygulamasıyla paylaşılmaz. Önce ana ekrana ekle, ürünleri sonra gir (ya da JSON yedeğinden yükle).</div>
+      <div class="callout hidden" id="ins-ios-browser">Bu tarayıcı yerine sayfayı <b>Safari</b>'de aç; "Ana Ekrana Ekle" en güvenilir orada çalışır.</div>
+    </div>
+    <div id="ins-other" class="hidden">
+      <p class="sub" style="margin-top:8px">Tarayıcı menüsünü (⋮) aç ve <b>"Uygulamayı yükle"</b> ya da <b>"Ana ekrana ekle"</b> seçeneğini kullan.</p>
+    </div>
+    <div class="btnrow"><button class="btn primary" data-action="close">Tamam</button></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: ONAY ============ -->
+<div class="ov" id="m-confirm">
+  <div class="sheet">
+    <h2 id="cf-title">Emin misin?</h2>
+    <p class="sub" id="cf-text"></p>
+    <div class="btnrow">
+      <button class="btn" id="cf-cancel">Vazgeç</button>
+      <button class="btn primary" id="cf-ok">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="f-file" accept=".json,application/json,text/plain" class="hidden">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ======================= Yardımcılar ======================= */
+var KEY = 'barstok.v1', UIKEY = 'barstok.ui.v1', MAXN = 9999;
+var ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+var collator = new Intl.Collator('tr', { sensitivity: 'base', numeric: true });
+function fold(s) {
+  return String(s == null ? '' : s).toLocaleLowerCase('tr-TR').normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i').replace(/\s+/g, ' ').trim();
+}
+function toInt(v) {
+  if (v == null || v === '') return null;
+  var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+  if (!isFinite(n)) return null;
+  return Math.min(MAXN, Math.max(0, Math.round(n)));
+}
+function newId(used) {
+  var id;
+  do { id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  while (used && used.has(id));
+  return id;
+}
+function pick(o, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    if (Object.prototype.hasOwnProperty.call(o, keys[i])) return o[keys[i]];
+  }
+  return undefined;
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function ymd() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function tick() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
+function isStandalone() {
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+var ICON = {
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>'
+};
+
+/* ======================= Durum ======================= */
+function emptyState() {
+  return { schemaVersion: 1, updatedAt: null, products: [], counts: {}, countStartedAt: null };
+}
+var state = emptyState();
+var ui = { tab: 'products', loc: 'bar', searchP: '', searchC: '', onlyUncounted: false };
+
+function readItem(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  var nm = pick(raw, ['name', 'ad', 'isim', 'urun', 'ürün']);
+  var name = (typeof nm === 'string' || typeof nm === 'number')
+    ? String(nm).replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+  if (!name) return null;
+  var par = toInt(pick(raw, ['par', 'garanti', 'hedef', 'target']));
+  var nt = pick(raw, ['note', 'not', 'notu']);
+  var note = nt == null ? undefined : String(nt).replace(/\s+/g, ' ').trim().slice(0, 120);
+  var id = (typeof raw.id === 'string' || typeof raw.id === 'number') && ID_RE.test(String(raw.id)) ? String(raw.id) : undefined;
+  return { id: id, name: name, par: par == null ? undefined : par, note: note };
+}
+function readCount(v) {
+  if (v == null) return null;
+  if (typeof v === 'number' || typeof v === 'string') {
+    var n = toInt(v);
+    return n == null ? null : { bar: n, depo: null };
+  }
+  if (typeof v !== 'object') return null;
+  var bar = toInt(v.bar), depo = toInt(v.depo);
+  if (bar == null && depo == null) return null;
+  return { bar: bar, depo: depo };
+}
+function validDate(s) {
+  return typeof s === 'string' && !isNaN(Date.parse(s)) ? s : null;
+}
+function sanitizeState(raw) {
+  var s = emptyState();
+  if (!raw || typeof raw !== 'object') return s;
+  var used = new Set();
+  (Array.isArray(raw.products) ? raw.products : []).forEach(function (p) {
+    var it = readItem(p);
+    if (!it) return;
+    var id = it.id && !used.has(it.id) ? it.id : newId(used);
+    used.add(id);
+    s.products.push({ id: id, name: it.name, par: it.par == null ? 0 : it.par, note: it.note || '' });
+  });
+  if (raw.counts && typeof raw.counts === 'object') {
+    Object.keys(raw.counts).forEach(function (k) {
+      if (!used.has(k)) return;
+      var c = readCount(raw.counts[k]);
+      if (c) s.counts[k] = c;
+    });
+  }
+  s.updatedAt = validDate(raw.updatedAt);
+  s.countStartedAt = validDate(raw.countStartedAt);
+  return s;
+}
+function load() {
+  var t = null;
+  try {
+    t = localStorage.getItem(KEY);
+    if (t) state = sanitizeState(JSON.parse(t));
+  } catch (e) {
+    console.warn('Veri okunamadı', e);
+    try { if (t) localStorage.setItem(KEY + '.corrupt', t); } catch (e2) {}
+    state = emptyState();
+  }
+}
+function save() {
+  state.updatedAt = new Date().toISOString();
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch (e) {
+    toast('⚠ Kaydedilemedi! Tarayıcı depolaması dolu veya kapalı olabilir.');
+  }
+  try {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+  } catch (e) {}
+}
+function loadUI() {
+  try {
+    var u = JSON.parse(localStorage.getItem(UIKEY) || 'null');
+    if (u) {
+      if (['products', 'count', 'order'].indexOf(u.tab) > -1) ui.tab = u.tab;
+      if (['bar', 'depo', 'both'].indexOf(u.loc) > -1) ui.loc = u.loc;
+    }
+  } catch (e) {}
+}
+function saveUI() {
+  try { localStorage.setItem(UIKEY, JSON.stringify({ tab: ui.tab, loc: ui.loc })); } catch (e) {}
+}
+
+/* ======================= Ürün & sayım mantığı ======================= */
+function sortedProducts() {
+  return state.products.slice().sort(function (a, b) { return collator.compare(a.name, b.name); });
+}
+function findByName(name, exceptId) {
+  var f = fold(name);
+  return state.products.find(function (p) { return p.id !== exceptId && fold(p.name) === f; });
+}
+function getCount(id) {
+  var c = state.counts[id];
+  return { bar: c && c.bar != null ? c.bar : null, depo: c && c.depo != null ? c.depo : null };
+}
+function isCounted(id) { var c = getCount(id); return c.bar != null || c.depo != null; }
+function totalOf(id) { var c = getCount(id); return (c.bar || 0) + (c.depo || 0); }
+function setCount(id, loc, val) {
+  var c = state.counts[id] || (state.counts[id] = { bar: null, depo: null });
+  c[loc] = val;
+  if (c.bar == null && c.depo == null) delete state.counts[id];
+  else if (!state.countStartedAt) state.countStartedAt = new Date().toISOString();
+  save();
+}
+function computeOrder() {
+  var rows = [], uncounted = [];
+  sortedProducts().forEach(function (p) {
+    if (!isCounted(p.id)) { uncounted.push(p); return; }
+    var c = getCount(p.id), total = (c.bar || 0) + (c.depo || 0), need = p.par - total;
+    if (need > 0) rows.push({ p: p, need: need, total: total, bar: c.bar || 0, depo: c.depo || 0 });
+  });
+  return { rows: rows, uncounted: uncounted };
+}
+function countedInView(id) {
+  var c = getCount(id);
+  if (ui.loc === 'bar') return c.bar != null;
+  if (ui.loc === 'depo') return c.depo != null;
+  return c.bar != null || c.depo != null;
+}
+
+/* ======================= Toast & modal ======================= */
+var toastT;
+function toast(msg, opt) {
+  opt = opt || {};
+  var t = $('#toast');
+  t.innerHTML = '<span>' + esc(msg) + '</span>' + (opt.action ? '<button id="toast-act">' + esc(opt.action) + '</button>' : '');
+  t.classList.add('show');
+  clearTimeout(toastT);
+  if (opt.action) {
+    $('#toast-act').onclick = function () { t.classList.remove('show'); if (opt.onAction) opt.onAction(); };
+  }
+  if (!opt.sticky) toastT = setTimeout(function () { t.classList.remove('show'); }, opt.ms || 2200);
+}
+var confirmResolve = null;
+function syncLock() {
+  document.body.style.overflow = $$('.ov.open').length ? 'hidden' : '';
+}
+function openModal(el) { el.classList.add('open'); syncLock(); }
+function closeModal(el) { el.classList.remove('open'); syncLock(); }
+function dismiss(el) {
+  if (el.id === 'm-confirm' && confirmResolve) {
+    var r = confirmResolve; confirmResolve = null; closeModal(el); r(false); return;
+  }
+  closeModal(el);
+}
+function confirmBox(o) {
+  return new Promise(function (resolve) {
+    $('#cf-title').textContent = o.title || 'Emin misin?';
+    $('#cf-text').textContent = o.text || '';
+    var ok = $('#cf-ok');
+    ok.textContent = o.ok || 'Tamam';
+    ok.className = 'btn ' + (o.danger ? 'danger' : 'primary');
+    if (o.danger) { ok.style.background = 'var(--danger)'; ok.style.color = '#1b0000'; ok.style.borderColor = 'var(--danger)'; }
+    else { ok.style.background = ''; ok.style.color = ''; ok.style.borderColor = ''; }
+    confirmResolve = resolve;
+    $('#cf-ok').onclick = function () { var r = confirmResolve; confirmResolve = null; closeModal($('#m-confirm')); if (r) r(true); };
+    $('#cf-cancel').onclick = function () { dismiss($('#m-confirm')); };
+    openModal($('#m-confirm'));
+  });
+}
+
+/* ======================= Render: Ürünler ======================= */
+function itemHtml(p) {
+  var id = esc(p.id);
+  return '<div class="card item"><div class="main"><div class="name">' + esc(p.name) + '</div>' +
+    (p.note ? '<div class="note">' + esc(p.note) + '</div>' : '') + '</div>' +
+    '<div class="par"><small>Garanti</small><b>' + p.par + '</b></div>' +
+    '<button class="ico" data-action="edit" data-id="' + id + '" aria-label="Düzenle">' + ICON.edit + '</button>' +
+    '<button class="ico del" data-action="del" data-id="' + id + '" aria-label="Sil">' + ICON.trash + '</button></div>';
+}
+function renderProducts() {
+  var q = fold(ui.searchP), all = sortedProducts();
+  var list = q ? all.filter(function (p) { return fold(p.name + ' ' + p.note).indexOf(q) > -1; }) : all;
+  $('#p-count').textContent = q ? list.length + ' / ' + all.length + ' ürün' : all.length + ' ürün';
+  $('#plist').innerHTML = list.length ? list.map(itemHtml).join('') :
+    '<div class="empty">' + (all.length ? 'Aramayla eşleşen ürün yok.' : 'Henüz ürün yok.<br>Yukarıdan ekle ya da JSON yapıştır.') + '</div>';
+}
+
+/* ======================= Render: Sayım ======================= */
+function stepperHtml(id, loc, small) {
+  var v = getCount(id)[loc], i = esc(id), label = loc === 'bar' ? 'Bar' : 'Depo';
+  return '<div class="stepper' + (small ? ' sm' : '') + '">' +
+    '<button class="stp" data-action="step" data-id="' + i + '" data-loc="' + loc + '" data-d="-1" aria-label="' + label + ' azalt">' + ICON.minus + '</button>' +
+    '<input class="num" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="' + MAXN + '" step="1" placeholder="–" enterkeyhint="done" ' +
+    'value="' + (v == null ? '' : v) + '" data-cnt data-id="' + i + '" data-loc="' + loc + '" aria-label="' + label + ' adet">' +
+    '<button class="stp plus" data-action="step" data-id="' + i + '" data-loc="' + loc + '" data-d="1" aria-label="' + label + ' artır">' + ICON.plus + '</button></div>';
+}
+function infoHtml(p) {
+  var c = getCount(p.id), counted = c.bar != null || c.depo != null;
+  var total = counted ? String(totalOf(p.id)) : '–';
+  function f(v) { return v == null ? '–' : v; }
+  if (ui.loc === 'bar') return 'Depo: <b>' + f(c.depo) + '</b> | Toplam: <b>' + total + '</b> / Hedef: <b>' + p.par + '</b>';
+  if (ui.loc === 'depo') return 'Tezgah: <b>' + f(c.bar) + '</b> | Toplam: <b>' + total + '</b> / Hedef: <b>' + p.par + '</b>';
+  return 'Toplam: <b>' + total + '</b> / Hedef: <b>' + p.par + '</b>';
+}
+function chipHtml(p) {
+  if (!isCounted(p.id)) return '<span class="chip">Sayılmadı</span>';
+  var need = p.par - totalOf(p.id);
+  return need > 0 ? '<span class="chip need">Sipariş ' + need + '</span>' : '<span class="chip ok">✓ Tamam</span>';
+}
+function cardHtml(p) {
+  var body;
+  if (ui.loc === 'both') {
+    body = '<div class="brow"><div class="blabel">Bar</div>' + stepperHtml(p.id, 'bar', true) + '</div>' +
+           '<div class="brow"><div class="blabel">Depo</div>' + stepperHtml(p.id, 'depo', true) + '</div>';
+  } else {
+    body = stepperHtml(p.id, ui.loc, false);
+  }
+  return '<div class="card ccard' + (isCounted(p.id) ? ' counted' : '') + '" data-card="' + esc(p.id) + '">' +
+    '<div class="ctop"><div class="cname"><div class="name">' + esc(p.name) + '</div>' +
+    (p.note ? '<div class="note">' + esc(p.note) + '</div>' : '') + '</div>' +
+    '<div class="js-chip">' + chipHtml(p) + '</div></div>' + body +
+    '<div class="cinfo js-info">' + infoHtml(p) + '</div></div>';
+}
+function renderProgress() {
+  var total = state.products.length;
+  var n = state.products.filter(function (p) { return countedInView(p.id); }).length;
+  var label = ui.loc === 'bar' ? 'Tezgah: ' : ui.loc === 'depo' ? 'Depo: ' : '';
+  $('#c-progress').textContent = label + n + '/' + total + (ui.loc === 'both' ? ' sayıldı' : '');
+}
+function renderCountList() {
+  var q = fold(ui.searchC), all = sortedProducts();
+  var list = all.filter(function (p) {
+    if (q && fold(p.name + ' ' + p.note).indexOf(q) === -1) return false;
+    if (ui.onlyUncounted && countedInView(p.id)) return false;
+    return true;
+  });
+  var html;
+  if (!all.length) {
+    html = '<div class="empty">Önce Ürünler sekmesinden ürün ekle.<br><br><button class="btn" data-action="tab" data-tab="products">Ürünlere git</button></div>';
+  } else if (!list.length) {
+    html = '<div class="empty">' + (ui.onlyUncounted && !q ? '🎉 Bu görünümde sayılmamış ürün kalmadı.' : 'Eşleşen ürün yok.') + '</div>';
+  } else {
+    html = list.map(cardHtml).join('');
+  }
+  $('#clist').innerHTML = html;
+}
+function renderCount() {
+  $$('#seg button').forEach(function (b) { b.classList.toggle('on', b.dataset.loc === ui.loc); });
+  $('#c-only').checked = ui.onlyUncounted;
+  renderProgress();
+  renderCountList();
+}
+function refreshCard(id, force) {
+  var card = $$('.ccard').find(function (c) { return c.dataset.card === id; });
+  var p = state.products.find(function (x) { return x.id === id; });
+  if (!card || !p) return;
+  $$('input[data-cnt]', card).forEach(function (i) {
+    if (!force && i === document.activeElement) return;
+    var v = getCount(id)[i.dataset.loc];
+    i.value = v == null ? '' : v;
+  });
+  $('.js-info', card).innerHTML = infoHtml(p);
+  $('.js-chip', card).innerHTML = chipHtml(p);
+  card.classList.toggle('counted', isCounted(id));
+  renderProgress();
+  renderBadge();
+}
+function step(id, loc, d) {
+  var cur = getCount(id)[loc];
+  var next = Math.min(MAXN, Math.max(0, (cur == null ? 0 : cur) + d));
+  setCount(id, loc, next);
+  refreshCard(id, true);
+  tick();
+}
+
+/* ======================= Render: Sipariş ======================= */
+function renderBadge() {
+  var n = computeOrder().rows.length, b = $('#o-badge');
+  b.textContent = n;
+  b.classList.toggle('hidden', n === 0);
+}
+function renderOrder() {
+  var o = computeOrder(), rows = o.rows, unc = o.uncounted;
+  var pieces = rows.reduce(function (s, r) { return s + r.need; }, 0);
+  var countedN = state.products.length - unc.length;
+  var sum;
+  if (!state.products.length) sum = 'Ürün listesi boş<small>Önce Ürünler sekmesinden ürün ekle.</small>';
+  else if (!countedN) sum = 'Henüz sayım yapılmadı<small>Sayım sekmesinden bar ve depoyu say.</small>';
+  else if (!rows.length) sum = '🎉 Sipariş gerekmiyor<small>Sayılan tüm ürünler hedefte.</small>';
+  else sum = rows.length + ' kalem sipariş edilecek<small>Toplam ' + pieces + ' adet</small>';
+  $('#o-sum').innerHTML = sum;
+
+  $('#olist').innerHTML = rows.map(function (r) {
+    return '<div class="card orow"><div class="qty">' + r.need + '×</div><div class="main"><div class="name">' + esc(r.p.name) + '</div>' +
+      (r.p.note ? '<div class="note">' + esc(r.p.note) + '</div>' : '') +
+      '<div class="odetail">(Mevcut: ' + r.total + ' — Bar: ' + r.bar + ', Depo: ' + r.depo + ')</div></div></div>';
+  }).join('');
+
+  var w = '';
+  if (unc.length && state.products.length) {
+    var names = unc.slice(0, 8).map(function (p) { return esc(p.name); }).join(', ');
+    if (unc.length > 8) names += ' … +' + (unc.length - 8) + ' ürün daha';
+    w = '<div class="warn"><div class="wt">⚠ ' + unc.length + ' ürün henüz sayılmadı</div><div class="wl">' + names +
+      '</div><button class="btn sm" data-action="show-uncounted">Sayılmayanları göster</button></div>';
+  }
+  $('#o-warn').innerHTML = w;
+  $('#btn-copy-order').classList.toggle('off', !rows.length);
+  renderBadge();
+}
+
+/* ======================= Sekmeler ======================= */
+function renderActive() {
+  if (ui.tab === 'products') renderProducts();
+  else if (ui.tab === 'count') renderCount();
+  else renderOrder();
+  renderBadge();
+}
+function setTab(t) {
+  ui.tab = t; saveUI();
+  $$('.tab').forEach(function (s) { s.classList.toggle('active', s.id === 'tab-' + t); });
+  $$('.nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === t); });
+  renderActive();
+  window.scrollTo(0, 0);
+}
+
+/* ======================= Ürün ekle / düzenle / sil ======================= */
+function setErr(id, msg) { $(id).textContent = msg || ''; }
+
+$('#f-add').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var name = $('#a-name').value.replace(/\s+/g, ' ').trim();
+  var par = toInt($('#a-par').value);
+  var note = $('#a-note').value.replace(/\s+/g, ' ').trim();
+  if (!name) { setErr('#a-err', 'Ürün adı gir.'); $('#a-name').focus(); return; }
+  if (par == null) { setErr('#a-err', 'Garanti stok adedi gir (0 olabilir).'); $('#a-par').focus(); return; }
+  if (findByName(name)) { setErr('#a-err', '"' + name + '" zaten listede. Düzenlemek için listeden ✏️ kullan.'); return; }
+  setErr('#a-err', '');
+  state.products.push({ id: newId(new Set(state.products.map(function (p) { return p.id; }))), name: name, par: par, note: note });
+  save();
+  $('#a-name').value = ''; $('#a-par').value = ''; $('#a-note').value = '';
+  $('#a-name').focus();
+  toast('✓ ' + name + ' eklendi');
+  renderProducts(); renderBadge();
+});
+['#a-name', '#a-par', '#a-note'].forEach(function (s) {
+  $(s).addEventListener('input', function () { setErr('#a-err', ''); });
+});
+
+function openEdit(id) {
+  var p = state.products.find(function (x) { return x.id === id; });
+  if (!p) return;
+  $('#e-id').value = p.id; $('#e-name').value = p.name; $('#e-par').value = p.par; $('#e-note').value = p.note || '';
+  setErr('#e-err', '');
+  openModal($('#m-edit'));
+}
+$('#f-edit').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var id = $('#e-id').value;
+  var p = state.products.find(function (x) { return x.id === id; });
+  if (!p) { closeModal($('#m-edit')); return; }
+  var name = $('#e-name').value.replace(/\s+/g, ' ').trim();
+  var par = toInt($('#e-par').value);
+  var note = $('#e-note').value.replace(/\s+/g, ' ').trim();
+  if (!name) { setErr('#e-err', 'Ürün adı boş olamaz.'); return; }
+  if (par == null) { setErr('#e-err', 'Garanti stok adedi gir.'); return; }
+  if (findByName(name, id)) { setErr('#e-err', '"' + name + '" adında başka bir ürün var.'); return; }
+  p.name = name; p.par = par; p.note = note;
+  save(); closeModal($('#m-edit')); toast('✓ Kaydedildi');
+  renderActive();
+});
+function delProduct(id) {
+  var p = state.products.find(function (x) { return x.id === id; });
+  if (!p) return;
+  confirmBox({ title: 'Silinsin mi?', text: '"' + p.name + '" ve bu ürünün sayımı silinecek.', ok: 'Sil', danger: true }).then(function (ok) {
+    if (!ok) return;
+    state.products = state.products.filter(function (x) { return x.id !== id; });
+    delete state.counts[id];
+    save(); toast('Silindi'); renderActive();
+  });
+}
+function resetCounts() {
+  confirmBox({ title: 'Sayım sıfırlansın mı?', text: 'Bar ve depo sayımlarının hepsi silinir. Ürünler ve garanti stoklar kalır.', ok: 'Sıfırla', danger: true }).then(function (ok) {
+    if (!ok) return;
+    state.counts = {}; state.countStartedAt = null;
+    save(); toast('✓ Sayım sıfırlandı'); renderActive();
+  });
+}
+
+/* ======================= Dışa aktar ======================= */
+function buildBackup() {
+  return {
+    app: 'bar-stok',
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    updatedAt: state.updatedAt,
+    products: state.products.map(function (p) { return { id: p.id, name: p.name, par: p.par, note: p.note || '' }; }),
+    counts: state.counts,
+    countStartedAt: state.countStartedAt
+  };
+}
+function backupText() { return JSON.stringify(buildBackup(), null, 2); }
+async function copyText(t) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; }
+  } catch (e) {}
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, t.length);
+    var ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+async function exportFile() {
+  var json = backupText(), name = 'bar-stok-yedek-' + ymd() + '.json';
+  try {
+    var file = new File([json], name, { type: 'application/json' });
+    if (isIOS() && isStandalone() && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+  } catch (e) {}
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  toast('⬇ ' + name);
+}
+async function copyOrder() {
+  var rows = computeOrder().rows;
+  if (!rows.length) { toast('Kopyalanacak sipariş yok'); return; }
+  var text = rows.map(function (r) { return r.need + 'x ' + r.p.name; }).join('\n');
+  toast((await copyText(text)) ? '✓ Liste kopyalandı (' + rows.length + ' kalem)' : '⚠ Kopyalanamadı');
+}
+async function copyBackup() {
+  toast((await copyText(backupText())) ? '✓ JSON kopyalandı' : '⚠ Kopyalanamadı');
+}
+
+/* ======================= İçe aktar ======================= */
+function parseLoose(text) {
+  var t = String(text || '').replace(/^﻿/, '').trim();
+  if (!t) return { empty: true };
+  try { return { value: JSON.parse(t) }; }
+  catch (e1) {
+    var u = t.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '')
+      .replace(/[“”„‟]/g, '"').replace(/,\s*([}\]])/g, '$1').trim();
+    try { return { value: JSON.parse(u) }; }
+    catch (e2) { return { error: e1.message }; }
+  }
+}
+function planImport(text, mode, withCounts) {
+  var r = parseLoose(text);
+  if (r.empty) return { status: 'empty' };
+  if (r.error) return { status: 'error', msg: 'JSON okunamadı: ' + r.error };
+  var v = r.value, items, rawCounts = null, rawStarted = null;
+  if (Array.isArray(v)) items = v;
+  else if (v && typeof v === 'object' && Array.isArray(v.products)) {
+    items = v.products;
+    rawCounts = v.counts && typeof v.counts === 'object' ? v.counts : null;
+    rawStarted = validDate(v.countStartedAt);
+  } else if (v && typeof v === 'object' && readItem(v)) items = [v];
+  else return { status: 'error', msg: 'Format tanınmadı. Ürün dizisi [...] ya da yedek objesi {"products":[...]} bekleniyor.' };
+
+  var existing = state.products.map(function (p) { return { id: p.id, name: p.name, par: p.par, note: p.note || '' }; });
+  var oldIds = new Set(existing.map(function (p) { return p.id; }));
+  var oldByName = new Map(existing.map(function (p) { return [fold(p.name), p]; }));
+  var out = new Map(), nameIndex = new Map(), usedIds = new Set(), idMap = new Map(), seen = new Set();
+  if (mode === 'merge') {
+    existing.forEach(function (p) { out.set(p.id, { id: p.id, name: p.name, par: p.par, note: p.note }); nameIndex.set(fold(p.name), p.id); usedIds.add(p.id); });
+  }
+  var added = 0, updated = 0, skipped = 0;
+
+  items.forEach(function (raw) {
+    var it = readItem(raw);
+    if (!it) { skipped++; return; }
+    var key = fold(it.name), fid = nameIndex.get(key);
+    if (fid) {
+      var p = out.get(fid);
+      if (it.par != null) p.par = it.par;
+      if (it.note) p.note = it.note;                 // boş not mevcut notu silmez
+      if (!seen.has(fid) && mode === 'merge' && oldIds.has(fid)) updated++;
+    } else {
+      var reuse = mode === 'replace' ? oldByName.get(key) : null;
+      if (reuse) {
+        fid = reuse.id;
+        out.set(fid, { id: fid, name: it.name, par: it.par != null ? it.par : reuse.par, note: it.note ? it.note : (it.note === undefined ? reuse.note : '') });
+        usedIds.add(fid); updated++;
+      } else {
+        var blocked = new Set(); usedIds.forEach(function (x) { blocked.add(x); }); oldIds.forEach(function (x) { blocked.add(x); });
+        fid = it.id && !blocked.has(it.id) ? it.id : newId(blocked);
+        usedIds.add(fid);
+        out.set(fid, { id: fid, name: it.name, par: it.par == null ? 0 : it.par, note: it.note || '' });
+        added++;
+      }
+      nameIndex.set(key, fid);
+    }
+    if (it.id) idMap.set(it.id, fid);
+    seen.add(fid);
+  });
+
+  if (!seen.size) return { status: 'error', msg: 'Hiç geçerli ürün bulunamadı (her ürün için en az "name" gerekli).' };
+
+  var removed = 0;
+  if (mode === 'replace') existing.forEach(function (p) { if (!out.has(p.id)) removed++; });
+
+  var counts = {};
+  Object.keys(state.counts).forEach(function (k) {
+    if (out.has(k)) counts[k] = { bar: state.counts[k].bar, depo: state.counts[k].depo };
+  });
+  var countsAvail = 0, incoming = {};
+  if (rawCounts) {
+    Object.keys(rawCounts).forEach(function (k) {
+      var fid = idMap.get(k); if (!fid) return;
+      var c = readCount(rawCounts[k]); if (!c) return;
+      incoming[fid] = c; countsAvail++;
+    });
+  }
+  var countsApplied = 0;
+  if (withCounts) Object.keys(incoming).forEach(function (fid) { counts[fid] = incoming[fid]; countsApplied++; });
+
+  return {
+    status: 'ok',
+    products: Array.from(out.values()),
+    counts: counts,
+    startedAt: withCounts && countsApplied ? (rawStarted || new Date().toISOString()) : null,
+    stats: { found: seen.size, added: added, updated: updated, removed: removed, skipped: skipped, countsAvail: countsAvail, countsApplied: countsApplied, mode: mode }
+  };
+}
+function importMode() { var r = $('input[name="i-mode"]:checked'); return r ? r.value : 'merge'; }
+var lastPlan = null;
+function updatePreview() {
+  var plan = planImport($('#i-text').value, importMode(), $('#i-counts').checked);
+  lastPlan = plan;
+  var box = $('#i-preview'), go = $('#i-go');
+  box.className = 'preview';
+  var ok = false;
+  if (plan.status === 'empty') {
+    box.textContent = 'Metni yapıştır, burada özet görünecek.';
+  } else if (plan.status === 'error') {
+    box.classList.add('bad'); box.textContent = '⚠ ' + plan.msg;
+  } else {
+    ok = true; box.classList.add('good');
+    var s = plan.stats, parts = [];
+    parts.push('✔ ' + s.found + ' ürün bulundu: ' + s.added + ' yeni, ' + s.updated + ' güncellenecek.');
+    if (s.mode === 'replace') parts.push('Mevcut listeden ' + s.removed + ' ürün silinecek.');
+    if (s.countsAvail) parts.push('Sayım verisi: ' + s.countsAvail + ' ürün' + ($('#i-counts').checked ? ' (aktarılacak).' : ' (aktarılmayacak).'));
+    else parts.push('Sayım verisi yok.');
+    if (s.skipped) parts.push(s.skipped + ' kayıt atlandı (isimsiz/geçersiz).');
+    box.innerHTML = parts.map(esc).join('<br>');
+  }
+  go.classList.toggle('off', !ok);
+  $('#i-counts').disabled = plan.status === 'ok' ? plan.stats.countsAvail === 0 : false;
+}
+function openImport(prefill) {
+  $('#i-text').value = prefill || '';
+  $('input[name="i-mode"][value="merge"]').checked = true;
+  $('#i-counts').checked = true;
+  updatePreview();
+  openModal($('#m-import'));
+  if (!prefill) setTimeout(function () { $('#i-text').focus(); }, 60);
+}
+async function doImport() {
+  var plan = planImport($('#i-text').value, importMode(), $('#i-counts').checked);
+  if (plan.status !== 'ok') { updatePreview(); return; }
+  var s = plan.stats;
+  if (s.mode === 'replace') {
+    var ok = await confirmBox({
+      title: 'Üzerine yazılsın mı?',
+      text: 'Mevcut ' + state.products.length + ' ürünlük liste ' + plan.products.length + ' ürünle değiştirilecek (' + s.removed + ' ürün silinecek).',
+      ok: 'Üzerine Yaz', danger: true
+    });
+    if (!ok) return;
+  }
+  state.products = plan.products;
+  state.counts = plan.counts;
+  if (plan.startedAt && !state.countStartedAt) state.countStartedAt = plan.startedAt;
+  save();
+  closeModal($('#m-import'));
+  toast('✓ ' + s.found + ' ürün aktarıldı (' + s.added + ' yeni, ' + s.updated + ' güncel)');
+  renderActive();
+}
+$('#i-text').addEventListener('input', updatePreview);
+$('#i-counts').addEventListener('change', updatePreview);
+$$('input[name="i-mode"]').forEach(function (r) { r.addEventListener('change', updatePreview); });
+
+$('#f-file').addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () { openImport(String(rd.result || '')); };
+  rd.onerror = function () { toast('⚠ Dosya okunamadı'); };
+  rd.readAsText(f);
+  e.target.value = '';
+});
+async function pasteFromClipboard() {
+  try {
+    var t = await navigator.clipboard.readText();
+    if (t) { $('#i-text').value = t; updatePreview(); return; }
+    toast('Pano boş');
+  } catch (e) {
+    toast('Panoya erişilemedi. Alana uzun basıp "Yapıştır"ı seç.', { ms: 3200 });
+    $('#i-text').focus();
+  }
+}
+
+/* ======================= Kurulum (PWA) ======================= */
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; });
+window.addEventListener('appinstalled', function () { deferredPrompt = null; updateInstallBtn(); toast('✓ Uygulama yüklendi'); });
+function updateInstallBtn() { $('#btn-install').classList.toggle('hidden', isStandalone()); }
+async function onInstall() {
+  if (deferredPrompt) {
+    var dp = deferredPrompt; deferredPrompt = null;
+    try { dp.prompt(); await dp.userChoice; } catch (e) {}
+    updateInstallBtn();
+    return;
+  }
+  var ios = isIOS();
+  $('#ins-ios').classList.toggle('hidden', !ios);
+  $('#ins-other').classList.toggle('hidden', ios);
+  $('#ins-ios-browser').classList.toggle('hidden', !(ios && /CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent)));
+  openModal($('#m-install'));
+}
+
+if ('serviceWorker' in navigator) {
+  var hadController = !!navigator.serviceWorker.controller, reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadController || reloading) return;
+    reloading = true; location.reload();
+  });
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
+      function notify(w) {
+        toast('Yeni sürüm hazır', { action: 'Yenile', sticky: true, onAction: function () { w.postMessage({ type: 'SKIP_WAITING' }); } });
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) notify(reg.waiting);
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing; if (!w) return;
+        w.addEventListener('statechange', function () {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) notify(w);
+        });
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') reg.update().catch(function () {});
+      });
+    }).catch(function () {});
+  });
+}
+
+/* ======================= Olaylar ======================= */
+document.addEventListener('click', function (e) {
+  if (e.target.classList && e.target.classList.contains('ov')) { dismiss(e.target); return; }
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var a = el.dataset.action, id = el.dataset.id;
+  switch (a) {
+    case 'tab': setTab(el.dataset.tab); break;
+    case 'loc': ui.loc = el.dataset.loc; saveUI(); renderCount(); break;
+    case 'step': step(id, el.dataset.loc, parseInt(el.dataset.d, 10)); break;
+    case 'edit': openEdit(id); break;
+    case 'del': delProduct(id); break;
+    case 'reset': resetCounts(); break;
+    case 'show-uncounted':
+      ui.loc = 'both'; ui.onlyUncounted = true; ui.searchC = ''; $('#c-search').value = ''; saveUI(); setTab('count'); break;
+    case 'copy-order': copyOrder(); break;
+    case 'export-file': exportFile(); break;
+    case 'export-copy': copyBackup(); break;
+    case 'import-file': $('#f-file').click(); break;
+    case 'open-import': openImport(''); break;
+    case 'paste-clip': pasteFromClipboard(); break;
+    case 'import-go': doImport(); break;
+    case 'install': onInstall(); break;
+    case 'close': dismiss(el.closest('.ov')); break;
+  }
+});
+
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.matches && t.matches('input[data-cnt]')) {
+    var v = t.value === '' ? null : toInt(t.value);
+    setCount(t.dataset.id, t.dataset.loc, v);
+    refreshCard(t.dataset.id, false);
+  }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.matches && t.matches('input[data-cnt]')) {
+    var v = getCount(t.dataset.id)[t.dataset.loc];
+    t.value = v == null ? '' : v;
+  }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.target.matches && e.target.matches('input[data-cnt]')) { e.preventDefault(); e.target.blur(); }
+  if (e.key === 'Escape') {
+    var open = $$('.ov.open'); if (open.length) dismiss(open[open.length - 1]);
+  }
+});
+$('#p-search').addEventListener('input', function (e) { ui.searchP = e.target.value; renderProducts(); });
+$('#c-search').addEventListener('input', function (e) { ui.searchC = e.target.value; renderCountList(); });
+$('#c-only').addEventListener('change', function (e) { ui.onlyUncounted = e.target.checked; renderCountList(); });
+
+window.addEventListener('storage', function (e) {
+  if (e.key === KEY) { load(); renderActive(); }
+});
+
+/* ======================= Başlat ======================= */
+load();
+loadUI();
+updateInstallBtn();
+setTab(ui.tab);
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
+})();
+</script>
+</body>
+</html>
